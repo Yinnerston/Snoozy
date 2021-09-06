@@ -1,12 +1,8 @@
-from sqlalchemy import Column, ForeignKey, String, Boolean, Integer
+from sqlalchemy import Column, ForeignKey, String, Boolean, Integer, Table
+from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from app.api.deps import get_db
 
-db = get_db()
-role_association_table = db.Table('role_association',
-                Column('user_id', Integer, ForeignKey('user.id')),
-                Column('role_id', Integer, ForeignKey('role.id')),
-)
+from .tables import userprofile_role_association_table
 
 class Role(Base):
     """ A role that a user has within a group.
@@ -15,6 +11,12 @@ class Role(Base):
         Base ([type]): [description]
     """
     id = Column(Integer, primary_key=True, index=True)
+    # A group can have many roles
+    group_id = Column(Integer, ForeignKey('group.id'))
+    group = relationship("Group", back_populates="roles")
+    # Bidirectional many-to-many relationship with users in group
+    usersWithRole = relationship("UserProfile", secondary=userprofile_role_association_table, back_populates="roles")
+
     name = Column(String, unique=True)  # TODO: Make this the primary key?
     colour = Column(String, default=None)
     manageServer = Column(Boolean, default=True)
@@ -25,3 +27,4 @@ class Role(Base):
     def __init__(self, name) -> None:
         super().__init__()
         self.name = name
+
